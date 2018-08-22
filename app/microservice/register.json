@@ -3,6 +3,7 @@
 	"endpoints": [{
 		"path": "/v1/service/hi",
 		"method": "GET",
+		"binary": true,
 		"redirect": {
 			"method": "GET",
 			"path": "/api/v1/service/hi"

@@ -2,6 +2,11 @@ const Router = require('koa-router');
 const AWS = require('aws-sdk');
 const PassThrough = require('stream').PassThrough;
 
+const {chain}  = require('stream-chain');
+
+const parser = require('stream-csv-as-json');
+const {streamValues} = require('stream-json/streamers/StreamValues');
+
 
 const router = new Router({
     prefix: '/service',
@@ -12,30 +17,30 @@ class Service {
     static sayHi(ctx) {
 
       // https://stackoverflow.com/a/27993593/
-      var s3 = new AWS.S3()
+      var s3 = new AWS.S3({
+        httpOptions: {timeout: 1800000} // timeout after half an hour
+      })
       var params = {Bucket: 'gfw2-data',
                     Key: 'alerts-tsv/temp/glad-by-state/BRA/BRA_14.csv'};
 
-      // var resp = new Promise((resolve, reject) => {
-      //
-      //   s3.getObject(params)
-      //     .createReadStream()
-      //     .on('end', () => {
-      //       return resolve(); })
-      //     .on('error', (error) => {
-      //       console.log(error)
-      //       return reject(error); })
-      //     .pipe(PassThrough())});
+      const pipeline = chain([
+        s3.getObject(params).createReadStream(),
+        parser(),
+        streamValues(),
+        data => {
+          const value = data.value;
 
-        //ctx.body = ctx.req.pipe(resp)
+          // this terminates the connection early because it takes a long time
+          // to find this data
+          return value && value[7] === '94' ? value.join(',') : null;
 
-        // kind of works, but waits for a long time before download
-        // in browser starts
-        var resp = s3.getObject(params)
-          .createReadStream()
-          .pipe(PassThrough());
+          // this works but downloads the whole file
+          // return value.join(',');
 
-        ctx.body = resp;
+        }])
+        .pipe(PassThrough())
+
+        ctx.body = pipeline;
     }
 
 }

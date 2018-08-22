@@ -49,6 +49,7 @@
     "koa-mount": "2.0.0",
     "koa-router": "^7.0.1",
     "request": "^2.79.0",
-    "request-promise": "^4.1.1"
+    "request-promise": "^4.1.1",
+    "stream-csv-as-json": "^1.0.1"
   }
 }
